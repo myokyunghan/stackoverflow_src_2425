@@ -1,8 +1,8 @@
 from lib.annotation.import_files import *
 from lib.annotation.VLLM import VLLM
 # https://github.com/meta-llama/llama-recipes/blob/main/recipes/quickstart/Prompt_Engineering_with_Llama_3.ipynb
-class SampleSelf_Consistency:
-    def __init__(self, annoate_target):  
+class ESampleSelf_Consistency:
+    def __init__(self, annoate_target, ver):  
         self.ollama         = 'llama-3.1-70b-instruct-lorablated.Q4_K_M:latest'
         self.chatgpt        = OpenAI(api_key= conf.OEPN_AI_KEY)
 
@@ -24,11 +24,8 @@ class SampleSelf_Consistency:
         self.excel_ver      = param['excel_ver']
         
         self.annoate_target = annoate_target.reset_index(drop=True)
-        self.annoate_target['creationdate'] = pd.to_datetime(self.annoate_target['creationdate']).dt.date
-        self.date           = annoate_target.iloc[0,1]
-        self.ver            = int(annoate_target.iloc[0,0])
-
-        self.save_dir       = f'./result/{self.ver}'
+        self.save_dir       = f'./result/{ver
+                                          }'
 
         print(f'param for sample self consistency : {self.llm_model} | {self.few_shot_n} | {self.q_src_yn} | {self.sys_prompt} | {self.sf_num} | {self.temperature} | {self.excel_ver}' )
         if not os.path.exists(self.save_dir):

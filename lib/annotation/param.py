@@ -10,13 +10,13 @@
 
 
 # param for test
-param = {   'llm_model'     : 'l'
+param = {   'llm_model'     : 'v'
          ,  'few_shot_n'    : 4
          ,  'q_src_yn'      : 'Y'
          ,  'p_ver'         :'sys_prompt10'
          ,  'sf_num'        : 5
          ,  'temperature'   : 0.01
-         ,  'excel_ver'     :'ver4'
+         ,  'excel_ver'     :'ver6'
          }  
 
 
