@@ -24,8 +24,8 @@ class ESampleSelf_Consistency:
         self.excel_ver      = param['excel_ver']
         
         self.annoate_target = annoate_target.reset_index(drop=True)
-        self.save_dir       = f'./result/{ver
-                                          }'
+        self.save_dir       = f'./result/{ver}'
+        self.ver            = ver
 
         print(f'param for sample self consistency : {self.llm_model} | {self.few_shot_n} | {self.q_src_yn} | {self.sys_prompt} | {self.sf_num} | {self.temperature} | {self.excel_ver}' )
         if not os.path.exists(self.save_dir):
@@ -129,18 +129,19 @@ class ESampleSelf_Consistency:
             cursor.close()
             conn.close()            
 
-    def calc_acc_for_v(self, llm_model, few_shot_n, q_src_yn):
+    def calc_acc_for_v(self):
         vllm = VLLM()
         for idx, message in tqdm(enumerate(self.message_list)):
             tmp = []
             response = vllm.llm.chat(message, sampling_params=vllm.params) 
-
-            tmp.append(self.df.loc[self.eval_q_list[idx], 'id'])
+            tmp.append(self.eval_q_list[idx])
             tmp.append(response[0].outputs[0].text)
             self.result.append(tmp)
         result_df = pd.DataFrame(self.result, columns = ['id', 'result'])
-        result_df = pd.merge(self.df, result_df, on = 'id')
-        result_df.to_csv(f'./result/sc_{llm_model}_result_{few_shot_n}_{self.test_n}_{q_src_yn}_{self.version}_{self.p_ver}_{self.sf_num}_{self.temperature}_{self.excel_ver}_{self.loop_i}.csv')
+        result_df = pd.merge(self.annoate_target[['id', 'question']], result_df,on = 'id')
+
+        result_df.to_csv(f'{self.save_dir}/{self.ver}.csv')
+        print(f'{self.save_dir}/{self.ver}.csv')
  
     def calc_acc_for_l(self):           
         for idx, message in tqdm(enumerate(self.message_list)):
