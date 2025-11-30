@@ -1,8 +1,11 @@
 import logging
-logging.getLogger("vllm").setLevel(logging.WARNING)
-logging.getLogger("vllm.engine").setLevel(logging.WARNING)
-logging.getLogger("vllm.worker").setLevel(logging.WARNING)
-logging.getLogger("vllm.runners").setLevel(logging.WARNING)
+
+logging.getLogger("vllm").setLevel(logging.ERROR)
+logging.getLogger("vllm.engine").setLevel(logging.ERROR)
+logging.getLogger("vllm.worker").setLevel(logging.ERROR)
+logging.getLogger("vllm.dispatcher").setLevel(logging.ERROR)
+logging.getLogger("ray").setLevel(logging.ERROR)
+
 
 from lib.annotation.import_files import *
 from vllm import LLM, SamplingParams
@@ -11,9 +14,10 @@ from vllm import LLM, SamplingParams
 class VLLM:
     def __init__(self):  
         self.llm = LLM( model="/usr/share/d_ollama/.ollama/models/hf_model/Llama-3.2-3B-Instruct",
-                   tensor_parallel_size=4,   # or 4, since you have 4 GPUs
-                    dtype="auto",
-                    gpu_memory_utilization=0.3)
+                        tensor_parallel_size=4,   # or 4, since you have 4 GPUs
+                        dtype="auto",
+                        gpu_memory_utilization=0.3,
+                        )
         self.params = SamplingParams(temperature=0.01, top_p=0.9, max_tokens=10)
 
 
