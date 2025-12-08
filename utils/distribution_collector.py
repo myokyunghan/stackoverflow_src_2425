@@ -76,17 +76,14 @@ def collect_topic_distributions(window, data_dir, weekday_list = None, options=N
     all_topics = CONSTANTS.all_topics_list
     date_str_list = get_datetime_strings_before_and_after_gpt(window)
     to_return = []
-    print(f"date_str_list : {date_str_list}")
     for i in range(len(date_str_list)-1):
         date_range = (date_str_list[i], date_str_list[i+1])
         print(f"date_range: {date_range}")
-        print(f"collect_topic_distributions loop num : {i}")
         topic_distribution = get_topic_distribution_in_date_range(
             date_range, data_dir, all_topics, weekday_list, options)
         if len(topic_distribution) != 0 :
             to_return.append(topic_distribution)
-        print(f"len(topic_distribution) in loop num{i} : {len(topic_distribution)}")
-        print(f"len(to_return) in loop num{i} : {len(to_return)}")
+        
     return to_return
 
 
