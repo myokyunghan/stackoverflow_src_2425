@@ -1,5 +1,6 @@
 from constants import *
 from datetime import datetime, timedelta
+from utils.file_io import *
 import os
 
 
@@ -39,6 +40,27 @@ def get_monthly_datetime_str():
         to_return.append(time_str)
     return to_return
 
+def get_const_to_date(const_date):
+    """
+
+    Args:
+        const_date: date in const("2021.11.30")
+
+    Returns:
+        a datetime
+    """
+    return datetime.strptime(const_date, "%Y-%m-%d %H:%M:%S")
+
+def get_creationdate_to_date(creationdate):
+    """
+
+    Args:
+        creationdate: creationdate in question("2021-11-30T00:16:44.513000")
+
+    Returns:
+        a datetime
+    """
+    return datetime.fromisoformat(creationdate)
 
 def get_related_files(date_range, data_dir):
     """
@@ -56,9 +78,29 @@ def get_related_files(date_range, data_dir):
     
     lst = os.listdir(data_dir)
     for i in range(len(lst)):
-        if (start_date <= monthly_datetime_str[i] < end_date) or \
-                (monthly_datetime_str[i] <= start_date < monthly_datetime_str[i+1]):
-            to_return.append(i)
+        
+        loaded = load_json(f'{data_dir}/{lst[i]}')
+        
+        # print(f">>>>>>>>>>>>>>>>>get_related_files> f'{data_dir}/9.json")
+        min_dt = get_creationdate_to_date(min([x['creationdate'] for x in loaded]))
+        max_dt = get_creationdate_to_date(max([x['creationdate'] for x in loaded]))
+
+        # print(f">>>>>>>>>>>>>>>>>get_related_files> min_dt>'{min_dt}")
+        # print(f">>>>>>>>>>>>>>>>>get_related_files> max_dt>'{max_dt}")
+        st_dt = get_const_to_date(start_date)
+        end_dt = get_const_to_date(end_date)
+
+        # print(f">>>>>>>>>>>>>>>>>get_related_files> st_dt>'{st_dt}")
+        # print(f">>>>>>>>>>>>>>>>>get_related_files> end_dt>'{end_dt}")
+
+        intersection_start = max(min_dt, st_dt)
+        intersection_end = min(max_dt, end_dt)
+
+        # print(f">>>>>>>>>>>>>>>>>get_related_files> intersection_start>'{intersection_start}")
+        # print(f">>>>>>>>>>>>>>>>>get_related_files> intersection_end>'{intersection_end}")
+
+        if intersection_start <= intersection_end:
+            to_return.append(lst[i])
     return to_return
 
 def is_weekday(date_str):

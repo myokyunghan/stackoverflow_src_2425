@@ -116,6 +116,11 @@ def get_dist_x_div(distribution) :
     x_rel = [x_ele-divider for x_ele in x]      
     return x_rel, divider
 
+def get_dist_x_param_div(distribution, int_) : 
+    x = list(range(len(distribution)))
+    divider = int(int_)
+    x_rel = [x_ele-divider for x_ele in x]      
+    return x_rel, divider
 
 
 def topic_rank_before_gpt(dir_):

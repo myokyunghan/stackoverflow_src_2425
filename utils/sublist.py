@@ -1,5 +1,5 @@
 import re
-from utils.datetime_handler import (is_weekday, is_target_weekday)
+from utils.datetime_handler import (is_weekday, is_target_weekday, get_const_to_date, get_creationdate_to_date)
 
 
 def get_sublist_of_desired_date_range(list_, date_range, weekday_list):
@@ -13,9 +13,14 @@ def get_sublist_of_desired_date_range(list_, date_range, weekday_list):
         a list of dict
     """
     to_return = []
+
+    start_date = get_const_to_date(date_range[0])
+    end_date = get_const_to_date(date_range[1])
+    
+
     for dict_ in list_:
-        date_ = dict_["creationdate"]
-        if date_range[0] <= date_ < date_range[1]:
+        date_ = get_creationdate_to_date(dict_["creationdate"])
+        if start_date <= date_ < end_date:
             if len(weekday_list)>0 : 
                 for weekday in weekday_list : 
                     if is_target_weekday(date_, weekday):

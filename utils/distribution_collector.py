@@ -47,11 +47,13 @@ def get_topic_distribution_in_date_range(date_range, data_dir, topics, weekday_l
         weekday_list = []
     file_list = get_related_files(date_range, data_dir)
     list_ = []
+
     for i in file_list:
-        file_path = f"{data_dir}/{i}.json"
+        file_path = f"{data_dir}/{i}"
         json_list = load_json(file_path)
         list_ += json_list
     list_ = get_sublist_of_desired_date_range(list_, date_range, weekday_list)
+
     if 'difficulties' in options:
         list_ = get_sublist_of_desired_difficulties(
             list_, options['difficulties']
@@ -76,10 +78,12 @@ def collect_topic_distributions(window, data_dir, weekday_list = None, options=N
     to_return = []
     for i in range(len(date_str_list)-1):
         date_range = (date_str_list[i], date_str_list[i+1])
+        print(f"date_range: {date_range}")
         topic_distribution = get_topic_distribution_in_date_range(
             date_range, data_dir, all_topics, weekday_list, options)
         if len(topic_distribution) != 0 :
             to_return.append(topic_distribution)
+        
     return to_return
 
 
@@ -140,7 +144,8 @@ def collect_tag_distributions(window, tag_info, data_dir, week_day_list=None, op
         a list of dict
     """
     tag_info = load_json(tag_info)
-    all_tags = tag_info
+    print(type(tag_info))
+    all_tags = list(tag_info.keys())
     date_str_list = get_datetime_strings_before_and_after_gpt(window)
     to_return = []
     for i in range(len(date_str_list)-1):
