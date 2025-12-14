@@ -29,10 +29,10 @@ class Self_Consistency:
 
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        file_handler = logging.FileHandler('test.log')
-        file_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # file_handler = logging.FileHandler('test.log')
+        # file_handler.setFormatter(formatter)
+        # self.logger.addHandler(file_handler)
 
         
         print(f'./result/sc_{llm_model}_result_{few_shot_n}_{self.test_n}_{q_src_yn}_{self.version}_{self.p_ver}_{self.sf_num}_{self.temperature}_{self.excel_ver}_{self.loop_i}.csv')
