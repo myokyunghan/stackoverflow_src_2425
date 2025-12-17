@@ -48,7 +48,7 @@ class SampleSelf_Consistency:
         diff_dict = {'Difficulty Level : Basic':        '<Difficulty Level>0</Difficulty Level>' ,
                     'Difficulty Level : Intermediate':  '<Difficulty Level>1</Difficulty Level>', 
                     'Difficulty Level : Advanced':      '<Difficulty Level>2</Difficulty Level>'}
-        self.df['answer_encode'] = self.df['answer'].apply(lambda x : diff_dict[x])
+        # self.df['answer_encode'] = self.df['answer'].apply(lambda x : diff_dict[x])
         # to evaluate self-consistency, pick eval target first
         # self.eval_q_id      = np.random.choice(list(self.df.index), size=test_n, replace=False)
 
@@ -79,7 +79,7 @@ class SampleSelf_Consistency:
                 example = []
                 for f_idx in f_idxs :
                     temp_dict = {"question" : str(self.df.loc[f_idx, 'question']),
-                                "answer"   : str(self.df.loc[f_idx, 'answer_encode'])}
+                                "answer"   : str(self.df.loc[f_idx, 'answer'])}
                     example.append(temp_dict)
                 examples.append(example)
             dict_for_p[e_idx] = examples

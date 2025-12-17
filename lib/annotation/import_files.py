@@ -2,6 +2,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+import logging
 import numpy as np
 import pandas as pd
 import datetime
@@ -54,7 +55,6 @@ from itertools import chain
 import pickle
 import json
 
-from lib.annotation.VLLM import *
 from lib.annotation.prompt import *
 from lib.annotation.param import *
 from lib.annotation.sequence import *
@@ -62,12 +62,14 @@ from lib.annotation.sequence import *
 import lib.preprocess.preprocess as pp
 import lib.preprocess.SectionExtractor as se
 from lib.annotation.excel import *
+from lib.annotation.loghander import *
 
 import lib.annotation.D_Annotation as da
 import lib.annotation.Self_Consistency as sc
 import lib.annotation.Sample_Insert as si
 import lib.annotation.Q_Extract as qe
 import lib.annotation.SampleSelf_Consistency as ssc
+
 
 
 

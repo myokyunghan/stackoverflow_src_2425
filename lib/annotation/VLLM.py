@@ -1,14 +1,6 @@
-import logging
-
-logging.getLogger("vllm").setLevel(logging.ERROR)
-logging.getLogger("vllm.engine").setLevel(logging.ERROR)
-logging.getLogger("vllm.worker").setLevel(logging.ERROR)
-logging.getLogger("vllm.dispatcher").setLevel(logging.ERROR)
-logging.getLogger("ray").setLevel(logging.ERROR)
-
-
 from lib.annotation.import_files import *
-from vllm import LLM, SamplingParams
+from vllm import LLM, SamplingParams # vllm 임포트를 이 블록 안으로 옮깁니다.
+
 
 # https://github.com/meta-llama/llama-recipes/blob/main/recipes/quickstart/Prompt_Engineering_with_Llama_3.ipynb
 class VLLM:
