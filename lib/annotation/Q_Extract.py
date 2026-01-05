@@ -10,13 +10,13 @@ class Q_Extract:
         self.ver = ver
 
     def chk_left(self):
-        q_sql = """
+        q_sql = f"""
                     select count(*) as cnt, min(to_char(aa.creationdate, 'yyyy-mm-dd')) as date
-                    from tt_posts_difficulty_target aa
+                    from {conf.SCHEMA_NAME}.tt_posts_difficulty_target aa
                         , (select ver, to_char(creationdate, 'yyyy-mm-dd') as std_date
-                            from tt_posts_difficulty_target a
+                            from {conf.SCHEMA_NAME}.tt_posts_difficulty_target a
                             where not exists (select 1
-                                                from tt_posts_difficulty_done x
+                                                from {conf.SCHEMA_NAME}.tt_posts_difficulty_done x
                                             where a.id = x.id
                                               and a.ver = x.ver)
                               and (ver/10000) = {0}/10000
@@ -55,21 +55,21 @@ class Q_Extract:
     
     def db_extract(self):
 
-        q_sql = """
+        q_sql = f"""
                     select aa.ver, aa.creationdate, aa.id, cc.title, dd.body
-                    from tt_posts_difficulty_target aa
+                    from {conf.SCHEMA_NAME}.tt_posts_difficulty_target aa
                         , (select ver, to_char(creationdate, 'yyyy-mm-dd') as std_date 
-                            from tt_posts_difficulty_target a 
+                            from {conf.SCHEMA_NAME}.tt_posts_difficulty_target a 
                             where not exists (select 1 
-                                                from tt_posts_difficulty_done x 
+                                                from {conf.SCHEMA_NAME}.tt_posts_difficulty_done x 
                                             where a.id = x.id
                                               and a.ver = x.ver)
                               and (ver/10000) = {0}/10000
                             order by a.ver, a.creationdate
                             limit 1
                     ) bb ,
-                    posts cc,
-                    postsbody dd 
+                    {conf.SCHEMA_NAME}.posts cc,
+                    {conf.SCHEMA_NAME}.postsbody dd 
                     where aa.ver = bb.ver
                     and to_char(aa.creationdate, 'yyyy-mm-dd') = std_date
                     and aa.id = cc.id 

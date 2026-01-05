@@ -4,13 +4,18 @@ from vllm import LLM, SamplingParams # vllm 임포트를 이 블록 안으로 �
 
 # https://github.com/meta-llama/llama-recipes/blob/main/recipes/quickstart/Prompt_Engineering_with_Llama_3.ipynb
 class VLLM:
-    def __init__(self):  
-        self.llm = LLM( model="/usr/share/d_ollama/.ollama/models/hf_model/Llama-3.2-3B-Instruct",
-                        tensor_parallel_size=4,   # or 4, since you have 4 GPUs
-                        dtype="auto",
-                        gpu_memory_utilization=0.3,
+    def __init__(self, llm_model):  
+        conf_for_llm = conf.VLLM_CONF[llm_model]
+        self.llm = LLM( model                   =   conf_for_llm['model'],
+                        tensor_parallel_size    =   conf_for_llm['tensor_parallel_size'],   # or 4, since you have 4 GPUs
+                        dtype                   =   conf_for_llm['dtype'],
+                        gpu_memory_utilization  =   conf_for_llm['gpu_memory_utilization'],
                         )
-        self.params = SamplingParams(temperature=0.01, top_p=0.9, max_tokens=10)
+        self.params = SamplingParams(temperature=   conf_for_llm['params']['temperature'], 
+                                    top_p       =   conf_for_llm['params']['top_p'], 
+                                    max_tokens  =   conf_for_llm['params']['max_tokens'],
+                                    stop        = ["</Difficulty Level>"]
+                                    )
 
 
     
