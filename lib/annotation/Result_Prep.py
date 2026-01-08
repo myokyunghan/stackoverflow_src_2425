@@ -2,23 +2,24 @@ from lib.annotation.import_files import *
 
 class Result_Prep: 
     
-    def make_one_file(self, ver):
-        path = f'/home/mghan/sopjt/git/stackoverflow_src/LLM/result/{ver}'
-        file_list = os.listdir(path)
+    def make_one_file(self, ver, path=f'/home/mghan/sopjt/git/stackoverflow_src/LLM/result/'):
+
+        file_list = os.listdir(f'{path}/{ver}')
         df = pd.DataFrame()
         if len(file_list)>0 : 
             for f in file_list:
-                tmp = pd.read_csv(f'{path}/{f}', index_col =0)
+                tmp = pd.read_csv(f'{path}/{ver}/{f}', index_col =0)
                 df = pd.concat([df, tmp], axis =0)
 
             df.sort_values(by = ['creationdate']).reset_index(drop=True)
             return df
         else :
-            return np.NAN
+            return np.nan
 
     def pp_df(self, df, sc_num):
         df_copy = df.copy()
         df_copy['creationdate'] = pd.to_datetime(df_copy['creationdate'])
+        df_copy.sort_values(by = ['creationdate'], ascending = True, inplace=True)
         df_copy.loc[:, 'rel_day'] = df_copy.loc[:,  'creationdate'] - datetime(2022,11,30)
         df_copy.loc[:, 'rel_days'] = df_copy.loc[:, 'rel_day'].dt.days
 

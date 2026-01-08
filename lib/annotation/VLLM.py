@@ -10,11 +10,12 @@ class VLLM:
                         tensor_parallel_size    =   conf_for_llm['tensor_parallel_size'],   # or 4, since you have 4 GPUs
                         dtype                   =   conf_for_llm['dtype'],
                         gpu_memory_utilization  =   conf_for_llm['gpu_memory_utilization'],
+                        # max_model_len           =   conf_for_llm['max_length']
                         )
         self.params = SamplingParams(temperature=   conf_for_llm['params']['temperature'], 
                                     top_p       =   conf_for_llm['params']['top_p'], 
                                     max_tokens  =   conf_for_llm['params']['max_tokens'],
-                                    stop        = ["</Difficulty Level>"]
+                                    # stop        = ["</Difficulty Level>"]
                                     )
 
 

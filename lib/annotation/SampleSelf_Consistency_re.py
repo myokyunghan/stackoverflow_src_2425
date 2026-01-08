@@ -1,22 +1,24 @@
 from lib.annotation.import_files import *
 from lib.annotation.VLLM import VLLM
-import lib.database.DBConn as db_conn
-
 # https://github.com/meta-llama/llama-recipes/blob/main/recipes/quickstart/Prompt_Engineering_with_Llama_3.ipynb
-class SampleSelf_Consistency:
+class SampleSelf_Consistency_re:
     def __init__(self, annoate_target):  
         self.ollama         = 'llama-3.1-70b-instruct-lorablated.Q4_K_M:latest'
         self.chatgpt        = OpenAI(api_key= conf.OEPN_AI_KEY)
 
         self.df             = pd.DataFrame()
-        # self.fewshot_q_id   = []
-        self.eval_q_id      = []
         self.eval_prompt    = []
         self.result         = []
         self.message_list   = []
         self.eval_q_list    = []
 
-        # param
+        # init param
+        self.annoate_target = annoate_target.reset_index(drop=True)
+        self.annoate_target['creationdate'] = pd.to_datetime(self.annoate_target['creationdate']).dt.date
+        self.date           = annoate_target.iloc[0,1]
+        self.ver            = int(annoate_target.iloc[0,0])
+
+        # predefined param
         self.llm_model      = param['llm_model']
         self.few_shot_n     = param['few_shot_n']
         self.q_src_yn       = param['q_src_yn']
@@ -24,96 +26,107 @@ class SampleSelf_Consistency:
         self.sf_num         = param['sf_num']
         self.temperature    = param['temperature']
         self.excel_ver      = param['excel_ver']
-        
-        self.annoate_target = annoate_target.reset_index(drop=True)
-        self.annoate_target['creationdate'] = pd.to_datetime(self.annoate_target['creationdate']).dt.date
-        self.date           = annoate_target.iloc[0,1]
-        self.ver            = int(annoate_target.iloc[0,0])
-
+        self.tk             = AutoTokenizer.from_pretrained(conf.VLLM_CONF[self.llm_model]['model'], use_fast=True)
         self.save_dir       = f'{conf.DATA_PATH}{conf.ANNO_RESULT}/{self.ver}'
-
-        print(f'param for sample self consistency : {self.llm_model} | {self.few_shot_n} | {self.q_src_yn} | {self.sys_prompt} | {self.sf_num} | {self.temperature} | {self.excel_ver}' )
+        
+        # log setting
+        self.logger         = get_userlogger()
+        self.logger.setLevel(logging.INFO)
+        
+        self.logger.info(f'param for sample self consistency : {self.llm_model} | {self.few_shot_n} | {self.q_src_yn} | {self.sys_prompt} | {self.sf_num} | {self.temperature} | {self.excel_ver}' )
         if not os.path.exists(self.save_dir):
-            os.makedirs(self.save_dir)  # 중첩된 폴더도 생성 가능
+            os.makedirs(self.save_dir)  
 
-    def random_selection(self):
-        few_shot_n, q_src_yn = param['few_shot_n'], param['q_src_yn']
+    def chk_max_length(self, message):
+        self.tk             = AutoTokenizer.from_pretrained(conf.VLLM_CONF[self.llm_model]['model'], use_fast=True)
+        prompt = self.tk.apply_chat_template(
+            message,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+        prompt_tokens = len(self.tk.encode(prompt))
 
+        MAX_CONTEXT = self.tk.model_max_length 
+        MAX_GENERATION = 256
+        SAFETY_MARGIN = 128
+
+        tot_promt_tk = prompt_tokens + MAX_GENERATION + SAFETY_MARGIN
+
+        return (tot_promt_tk > MAX_CONTEXT)        
+        
+    def get_annotation_data(self):
+        q_src_yn = param['q_src_yn']
         file_path = f'{conf.DATA_PATH}/data/q_output'
+        
         if q_src_yn == "Y":
             file_path = f'{file_path}_code_y'
-        file_path = f'{file_path}{excel[self.excel_ver]}'
-        print(f'{file_path}.csv')
         
-        self.df = pd.read_csv(f'{file_path}.csv', index_col = 0)
+        file_path = f'{file_path}{excel[self.excel_ver]}'
+        self.df = pd.read_csv(f'{file_path}.csv')
 
-        diff_dict = {'Difficulty Level : Basic':        '<Difficulty Level>0</Difficulty Level>' ,
-                    'Difficulty Level : Intermediate':  '<Difficulty Level>1</Difficulty Level>', 
-                    'Difficulty Level : Advanced':      '<Difficulty Level>2</Difficulty Level>'}
-        # self.df['answer_encode'] = self.df['answer'].apply(lambda x : diff_dict[x])
-        # to evaluate self-consistency, pick eval target first
-        # self.eval_q_id      = np.random.choice(list(self.df.index), size=test_n, replace=False)
+    def set_fewshot_example(self, few_shot_n):
+        diff_idx = {x : list(self.df[self.df['answer']==x].id) for x in list(conf.DIFF_DICT.values())}
+        
+        fewshot_q_list = []
+        for key, value in diff_idx.items():
+            diff_population = value
+            fewshot_q_list.append(np.random.choice(diff_population, size=few_shot_n, replace=True))
+        return np.concatenate(fewshot_q_list)
 
-        # and set the few shot example target
-        diff_idx = {x : list(self.df[self.df['answer']==x].index) for x in list(diff_dict.values())}
+
+    def random_selection(self):
+        few_shot_n = param['few_shot_n']
 
         diff_s_idx = {}
-        for l in range(self.annoate_target.shape[0]):
+        target_q_list = self.annoate_target.id
 
-            sc_q_list = []
-            for sf in range(self.sf_num):
-                tmp = []
-                for key, value in diff_idx.items():
-                    diff_population = value
-                    print(f'>>>>>>>>>>>>>>>>>>diff_population : {diff_population}')
-                    tmp.append(np.random.choice(diff_population, size=few_shot_n, replace=True))
-                sc_q_list.append(np.concatenate(tmp))
-            diff_s_idx[self.annoate_target.loc[l, 'id']] = sc_q_list
+        for target_q in target_q_list:
+            diff_s_idx[target_q] = dict()
+            for sf_idx in range(self.sf_num):
+                diff_s_idx[target_q][sf_idx] = self.set_fewshot_example(few_shot_n)
         return diff_s_idx
             
 
-    def write_promt(self) : 
-        e_f_dict = self.random_selection()
-        # {eval_q_id : [[fewshot1, ..., fewshotn],[fewshot1, ..., fewshotn]], ...} 
-        dict_for_p = {}
-        for e_idx, f_idx_list in e_f_dict.items():
-            examples = []
-            for f_idxs in f_idx_list :
-                example = []
-                for f_idx in f_idxs :
-                    temp_dict = {"question" : str(self.df.loc[f_idx, 'question']),
-                                "answer"   : str(self.df.loc[f_idx, 'answer'])}
-                    example.append(temp_dict)
-                examples.append(example)
-            dict_for_p[e_idx] = examples
-
+    def write_prompt(self, e_f_dict) : 
+        few_shot_n = param['few_shot_n']
+        print("1")
         # write system prompt & examples
-        for eval_id, few_list in dict_for_p.items() : 
-            for few_sf_list in few_list : 
-                message = []
-                message.append({"role": "system", "content": prompt[self.sys_prompt]})
+        for eval_id, fewshot_dict in e_f_dict.items() : 
+            print("2")
+            message = []
+            message.append({"role": "system", "content": prompt[self.sys_prompt] })
+            print("3")
 
-                for few_sf in few_sf_list:
-                    q_prompt = """\nHere is the examples of question\n"""
-                    q_prompt = q_prompt+f"{few_sf['question']}\n"
-                    message.append({"role": "user", "content": q_prompt})
-                    message.append({"role": "assistant", "content": few_sf['answer']})
-                # select the random evaluate question
-
+            for sc_idx, fewshot_id_list in fewshot_dict.items() : 
+                print("4")
                 self.eval_q_list.append(eval_id)
-                
+                print("5")
+                for fewshot_id in fewshot_id_list : 
+                    print("6")
+                    q_string = str(self.df.loc[self.df['id'] == fewshot_id, 'question'].values)
+                    a_string = str(self.df.loc[self.df['id'] == fewshot_id, 'answer'].values)
+                    t_string = str(self.annoate_target.loc[self.annoate_target['id']==eval_id, 'question'].values[0])
+                    print("7")
+
+                    q_prompt = """\nHere is the examples of question\n"""
+                    q_prompt = q_prompt + q_string
+                    message.append({"role": "user", "content": q_prompt})
+                    message.append({"role": "assistant", "content": a_string})
+                    print("8")
                 target_post="""\nHere is the target post. Answer the "Difficulty Level".\n"""
                 target_post = target_post+"""\n<target_post>\n"""
-                target_post = target_post+self.annoate_target.loc[self.annoate_target['id']==eval_id, 'question'].values[0]+'\n'
+                target_post = target_post+t_string+'\n'
                 target_post = target_post+"""</target_post>\n"""
+                print("9")
                 message.append({"role": "user", "content": target_post})
-                self.message_list.append(message)
-        return self.message_list
-
-        # print("self.eval_q_list : ", self.eval_q_list)
-        # print("self.message_list :", len(self.message_list))
-            # with open("list.json", "w") as file:
-            #     json.dump(self.message_list, file)
+                print("10")
+                if self.chk_max_length(message) :
+                    print("11")
+                    e_f_dict[eval_id][sc_idx] = self.set_fewshot_example(few_shot_n)
+                    self.write_prompt(e_f_dict, few_shot_n)
+                else :
+                    print("12")
+                    self.message_list.append(message)
 
     def insert_result(self, result_df):
         db = db_conn.DBConn()
@@ -124,27 +137,27 @@ class SampleSelf_Consistency:
 
         with db.cursor() as cur:
             psycopg2.extras.execute_values(cur, sql, data_list, template=None, page_size=100)
-            db.commit()              
+            db.commit()     
 
     def calc_acc_for_v(self, llm_model, few_shot_n, q_src_yn):
+        self.logger.info(f'>>>>>>>>>>>>>>>calc_acc_for_v start!')
         
         for idx, message in tqdm(enumerate(self.message_list)):
             tmp = []
+            self.logger.info(f'>>>>>>>>>>>>>>>calc_acc_for_v, ask VLLM start!')
             response = self.vllm.llm.chat(message, sampling_params=self.vllm.params) 
-            
+            self.logger.info(f'>>>>>>>>>>>>>>>calc_acc_for_v, ask VLLM end!')
             tmp.append(self.eval_q_list[idx])
             tmp.append(response[0].outputs[0].text)
             self.result.append(tmp)
         result_df = pd.DataFrame(self.result, columns = ['id', 'result'])
         result_df = pd.merge(self.annoate_target[['ver', 'creationdate', 'id']], result_df,on = 'id')
-
+        self.logger.info(f'>>>>>>>>>>>>>>>calc_acc_for_v, save result! {self.save_dir}/{self.date}.csv')
         result_df.to_csv(f'{self.save_dir}/{self.date}.csv')
-        
-        print(f'{self.save_dir}/{self.date}.csv!!!!!!!!')
 
         self.insert_result(result_df)
-        print(f'{self.save_dir}/{self.date}.csv!!!!!!!!!!')
         return result_df
+        # /home/mghan/sopjt/git/venv_stackoverflow_src/bin/python /home/mghan/sopjt/git/stackoverflow_src_2425/difficulty/automate_annotation/main.py ver50000
  
     def calc_acc_for_l(self):           
         for idx, message in tqdm(enumerate(self.message_list)):
@@ -184,6 +197,7 @@ class SampleSelf_Consistency:
         print(f'{self.save_dir}/{self.date}.csv')
 
         self.insert_result(result_df)
+
 
 
     def calc_acc(self) :

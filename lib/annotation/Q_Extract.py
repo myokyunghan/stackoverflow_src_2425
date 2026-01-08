@@ -1,4 +1,5 @@
 from lib.annotation.import_files import *
+import lib.database.DBConn as db_conn
 
 class Q_Extract: 
     def __init__(self, ver):
@@ -10,13 +11,14 @@ class Q_Extract:
         self.ver = ver
 
     def chk_left(self):
-        q_sql = f"""
+        db = db_conn.DBConn()
+        q_sql = """
                     select count(*) as cnt, min(to_char(aa.creationdate, 'yyyy-mm-dd')) as date
-                    from {conf.SCHEMA_NAME}.tt_posts_difficulty_target aa
+                    from tt_posts_difficulty_target aa
                         , (select ver, to_char(creationdate, 'yyyy-mm-dd') as std_date
-                            from {conf.SCHEMA_NAME}.tt_posts_difficulty_target a
+                            from tt_posts_difficulty_target a
                             where not exists (select 1
-                                                from {conf.SCHEMA_NAME}.tt_posts_difficulty_done x
+                                                from tt_posts_difficulty_done x
                                             where a.id = x.id
                                               and a.ver = x.ver)
                               and (ver/10000) = {0}/10000
@@ -27,19 +29,9 @@ class Q_Extract:
                     and to_char(aa.creationdate, 'yyyy-mm-dd') = bb.std_date
                 ;  
         """
-
-        conn = psycopg2.connect(host = conf.database_user['host'], dbname=conf.database_user['dbname'], user=conf.database_user['user'], password=conf.database_user['password'])
-        try:
-            cur = conn.cursor()
+        with db.cursor() as cur:
             cur.execute(q_sql.format(self.ver))
-            print(q_sql.format(self.ver))
             rows = cur.fetchall()
-            
-
-        except psycopg2.DatabaseError as db_err:
-            print(db_err)
-        finally : 
-            cur.close()
         return rows
       
     def chg_tag(self, code):
@@ -54,40 +46,31 @@ class Q_Extract:
                                                 
     
     def db_extract(self):
-
-        q_sql = f"""
+        db = db_conn.DBConn()
+        q_sql = """
                     select aa.ver, aa.creationdate, aa.id, cc.title, dd.body
-                    from {conf.SCHEMA_NAME}.tt_posts_difficulty_target aa
+                    from tt_posts_difficulty_target aa
                         , (select ver, to_char(creationdate, 'yyyy-mm-dd') as std_date 
-                            from {conf.SCHEMA_NAME}.tt_posts_difficulty_target a 
+                            from tt_posts_difficulty_target a 
                             where not exists (select 1 
-                                                from {conf.SCHEMA_NAME}.tt_posts_difficulty_done x 
+                                                from tt_posts_difficulty_done x 
                                             where a.id = x.id
                                               and a.ver = x.ver)
                               and (ver/10000) = {0}/10000
                             order by a.ver, a.creationdate
                             limit 1
                     ) bb ,
-                    {conf.SCHEMA_NAME}.posts cc,
-                    {conf.SCHEMA_NAME}.postsbody dd 
+                    posts cc,
+                    postsbody dd 
                     where aa.ver = bb.ver
                     and to_char(aa.creationdate, 'yyyy-mm-dd') = std_date
                     and aa.id = cc.id 
                     and aa.id  = dd.id
                 ;  
         """
-
-        conn = psycopg2.connect(host = conf.database_user['host'], dbname=conf.database_user['dbname'], user=conf.database_user['user'], password=conf.database_user['password'])
-        try:
-            cur = conn.cursor()
+        with db.cursor() as cur:
             cur.execute(q_sql.format(self.ver))
             rows = cur.fetchall()
-            
-
-        except psycopg2.DatabaseError as db_err:
-            print(db_err)
-        finally : 
-            cur.close()
 
         q_output = pd.DataFrame(rows, columns = [
                 'ver',

@@ -47,14 +47,16 @@ class Self_Consistency:
         diff_dict = {'Difficulty Level : Basic':        '<Difficulty Level>0</Difficulty Level>' ,
                     'Difficulty Level : Intermediate':  '<Difficulty Level>1</Difficulty Level>', 
                     'Difficulty Level : Advanced':      '<Difficulty Level>2</Difficulty Level>'}
-        # self.df['answer_encode'] = self.df['answer'].apply(lambda x : diff_dict[x])
         
-        # to evaluate self-consistency, pick eval target first
         self.eval_q_id      = np.random.choice(list(self.df.index), size=test_n, replace=False)
+        # hard coding for test :  self.eval_q_id      = 71389500
+        self.logger.info(f'>>>>>>>>>>>>>>>! Self_Consistency random_selection {self.eval_q_id}')
 
         # and set the few shot example target
         diff_idx = {x : np.setdiff1d(list(self.df[self.df['answer']==x].index), self.eval_q_id) for x in list(diff_dict.values())}
-        print(f">>>>>>>>>>>>>>>>diff_idx : {diff_idx}")
+        # hard coding for test : diff_idx = {x : np.setdiff1d(list(self.df[self.df['answer']==x].index), self.eval_q_id) for x in list(diff_dict.values())}
+        
+ 
 
         diff_s_idx = {}
         for l in range(test_n):
@@ -63,15 +65,19 @@ class Self_Consistency:
                 tmp = []
                 for key, value in diff_idx.items():
                     diff_population = value
+                    # np.random.seed(1)
                     tmp.append(np.random.choice(diff_population, size=few_shot_n, replace=True))
+                    self.logger.info(f'>>>>>>>>>>>>>>>! Self_Consistency set_fewshot_example {tmp}')
                 sc_q_list.append(np.concatenate(tmp))
             diff_s_idx[self.eval_q_id[l]] = sc_q_list
+        # hard coding for test :  diff_s_idx = {  self.eval_q_id : [[72422859, 72118859, 76779313]]}
         return diff_s_idx
             
 
     def write_promt(self, few_shot_n, q_src_yn, test_n) : 
         self.logger.info(f'>>>>>>>>>>>>>>>write promt start!')
         e_f_dict = self.random_selection(few_shot_n, q_src_yn, test_n)
+        print(f'>>>>>>>>>>>>>>>e_f_dict : {e_f_dict}')
         # {eval_q_id : [[fewshot1, ..., fewshotn],[fewshot1, ..., fewshotn]], ...} 
         dict_for_p = {}
         for e_idx, f_idx_list in e_f_dict.items():
@@ -81,6 +87,7 @@ class Self_Consistency:
                 for f_idx in f_idxs :
                     # temp_dict = {"question" : 'q',
                     #             "answer"   : 'a'}
+                    
                     temp_dict = {"question" : str(self.df.loc[f_idx, 'question']),
                                 "answer"   : str(self.df.loc[f_idx, 'answer'])}
                     example.append(temp_dict)
@@ -110,6 +117,8 @@ class Self_Consistency:
 
 
                 message.append({"role": "user", "content": target_post})
+                self.logger.info(f'>>>>>>>>>>>>>>>! Self_Consistency : {message}')
+
                 self.message_list.append(message)
 
         self.logger.info(f'>>>>>>>>>>>>>>>write promt end!')
@@ -181,7 +190,48 @@ class Self_Consistency:
             self.calc_acc_for_v(llm_model, few_shot_n, q_src_yn)
 
         
-        elif llm_model == 'vq' : # vLLM + llama
+        elif llm_model == 'vq' : # vLLM + qwen
             print("VLLM")
             self.vllm = VLLM(llm_model)
             self.calc_acc_for_v(llm_model, few_shot_n, q_src_yn)
+
+def test(llm_model, few_shot_n, test_n, q_src_yn, ver, p_ver, sc_num, temperature, excel_ver):
+    print(f"Test {llm_model}_{few_shot_n}_{test_n}_{q_src_yn}_{p_ver}_{sc_num} 시작")
+    for i in range(ver):
+        print(f"Test {llm_model}_{few_shot_n}_{test_n}_{q_src_yn}_{p_ver}_{sc_num} 실행 중: {i}")
+        Self_Consistency(   llm_model
+                            , few_shot_n
+                            , test_n
+                            , q_src_yn
+                            , ver
+                            , p_ver
+                            , sc_num
+                            , temperature
+                            , excel_ver
+                            , i)
+    
+    print(f"Task {llm_model}_{few_shot_n}_{test_n}_{q_src_yn}_{p_ver}_{sc_num} 완료")
+
+if __name__ == "__main__":
+
+
+    # test ('vl',              # llm_model
+    #         3,                # few_shot_n
+    #         5,                # test_n(# of question for test)
+    #         'Y',              # q_src_yn 
+    #         6,                # iteration num
+    #         'sys_prompt10',   # prompt ver
+    #         3,                # self-consistency number
+    #         0.01,             # temperature
+    #         'ver7'            # excel_verion
+    #         )
+        test ('vl',              # llm_model
+            1,                # few_shot_n
+            1,                # test_n(# of question for test)
+            'Y',              # q_src_yn 
+            1,                # iteration num
+            'sys_prompt10',   # prompt ver
+            1,                # self-consistency number
+            0.01,             # temperature
+            'ver7'            # excel_verion
+            )

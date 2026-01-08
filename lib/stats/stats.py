@@ -11,7 +11,7 @@ class Stats:
         self.x                  = x
         self.y                  = y
         self.dof                = dof
-        self.split_idx          = np.argmax(np.where(x < 0))+1
+        self.split_idx          = int(len(x)/2)
         self.c                  = c
 
         self.y_predict          = 0
