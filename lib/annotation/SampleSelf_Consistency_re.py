@@ -20,6 +20,7 @@ class SampleSelf_Consistency_re:
 
         # predefined param
         self.llm_model      = param['llm_model']
+        self.model_ver      = param['model_ver']
         self.few_shot_n     = param['few_shot_n']
         self.q_src_yn       = param['q_src_yn']
         self.sys_prompt     = param['p_ver'] 
@@ -27,7 +28,7 @@ class SampleSelf_Consistency_re:
         self.temperature    = param['temperature']
         self.excel_ver      = param['excel_ver']
         self.tk             = AutoTokenizer.from_pretrained(conf.VLLM_CONF[self.llm_model]['model'], use_fast=True)
-        self.save_dir       = f'{conf.DATA_PATH}{conf.ANNO_RESULT}/{self.ver}'
+        self.save_dir       = f'{conf.DATA_PATH}{conf.ANNO_RESULT}/{self.model_ver}/{self.ver}'
         
         # log setting
         self.logger         = get_userlogger()
@@ -89,43 +90,38 @@ class SampleSelf_Consistency_re:
 
     def write_prompt(self, e_f_dict) : 
         few_shot_n = param['few_shot_n']
-        print("1")
+        
         # write system prompt & examples
         for eval_id, fewshot_dict in e_f_dict.items() : 
-            print("2")
-            message = []
-            message.append({"role": "system", "content": prompt[self.sys_prompt] })
-            print("3")
-
+        
             for sc_idx, fewshot_id_list in fewshot_dict.items() : 
-                print("4")
+                message = []
+                message.append({"role": "system", "content": self.sys_prompt})
                 self.eval_q_list.append(eval_id)
-                print("5")
-                for fewshot_id in fewshot_id_list : 
-                    print("6")
-                    q_string = str(self.df.loc[self.df['id'] == fewshot_id, 'question'].values)
-                    a_string = str(self.df.loc[self.df['id'] == fewshot_id, 'answer'].values)
-                    t_string = str(self.annoate_target.loc[self.annoate_target['id']==eval_id, 'question'].values[0])
-                    print("7")
 
+                for fewshot_id in fewshot_id_list : 
+
+                    q_string = self.df.loc[self.df['id'] == fewshot_id, 'question'].iloc[0]
+                    a_string = self.df.loc[self.df['id'] == fewshot_id, 'answer'].iloc[0]
+                    t_string = self.annoate_target.loc[self.annoate_target['id']==eval_id, 'question'].iloc[0]
+                    
                     q_prompt = """\nHere is the examples of question\n"""
                     q_prompt = q_prompt + q_string
+
                     message.append({"role": "user", "content": q_prompt})
                     message.append({"role": "assistant", "content": a_string})
-                    print("8")
+                    
                 target_post="""\nHere is the target post. Answer the "Difficulty Level".\n"""
                 target_post = target_post+"""\n<target_post>\n"""
                 target_post = target_post+t_string+'\n'
                 target_post = target_post+"""</target_post>\n"""
-                print("9")
+                
                 message.append({"role": "user", "content": target_post})
-                print("10")
+                
                 if self.chk_max_length(message) :
-                    print("11")
                     e_f_dict[eval_id][sc_idx] = self.set_fewshot_example(few_shot_n)
                     self.write_prompt(e_f_dict, few_shot_n)
                 else :
-                    print("12")
                     self.message_list.append(message)
 
     def insert_result(self, result_df):
@@ -154,6 +150,8 @@ class SampleSelf_Consistency_re:
         result_df = pd.merge(self.annoate_target[['ver', 'creationdate', 'id']], result_df,on = 'id')
         self.logger.info(f'>>>>>>>>>>>>>>>calc_acc_for_v, save result! {self.save_dir}/{self.date}.csv')
         result_df.to_csv(f'{self.save_dir}/{self.date}.csv')
+        file_io.save_json(param,                    f'{self.save_dir}/param.json')
+        file_io.save_json(conf.VLLM_CONF[llm_model], f'{self.save_dir}/llm_config.json')
 
         self.insert_result(result_df)
         return result_df

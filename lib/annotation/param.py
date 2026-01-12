@@ -51,13 +51,23 @@
 #          ,  'excel_ver'     :'ver7'
 #          }  
 
-
 param = {   'llm_model'     : 'vq'
-         ,  'few_shot_n'    : 3
+         , 'model_ver'      : 'models--cyankiwi--Qwen3-30B-A3B-Instruct-2507-AWQ-4bit'
+         ,  'few_shot_n'    : 4
          ,  'q_src_yn'      : 'Y'
          ,  'p_ver'         :'sys_prompt10'
          ,  'sf_num'        : 5
          ,  'temperature'   : 0.01
          ,  'excel_ver'     :'ver7'
          }  
+
+
+# param = {   'llm_model'     : 'vq'
+#          ,  'few_shot_n'    : 3
+#          ,  'q_src_yn'      : 'Y'
+#          ,  'p_ver'         :'sys_prompt10'
+#          ,  'sf_num'        : 5
+#          ,  'temperature'   : 0.01
+#          ,  'excel_ver'     :'ver7'
+#          }  
 

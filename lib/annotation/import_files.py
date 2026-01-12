@@ -1,6 +1,7 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+import multiprocessing as mp
 
 import logging
 import numpy as np
@@ -68,5 +69,7 @@ import lib.annotation.Q_Extract as qe
 import lib.annotation.SampleSelf_Consistency as ssc
 
 import lib.database.DBConn as db_conn
+
+import utils.file_io as file_io
 
 from transformers import AutoTokenizer

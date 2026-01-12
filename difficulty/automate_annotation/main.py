@@ -2,9 +2,7 @@ from lib.annotation.import_files import *
 import argparse
 import lib.annotation.D_Annotation as da
 import lib.annotation.Q_Extract as qe
-# import lib.annotation.SampleSelf_Consistency_re as ssc
-import lib.annotation.SampleSelf_Consistency as ssc
-import lib.database.DBConn as db_conn
+import lib.annotation.SampleSelf_Consistency_re as ssc
 
 
 def main(ver):
@@ -24,7 +22,7 @@ def main(ver):
         print(f"Q_Extract end_{cnt[0][1]}")
 
         print(f"SampleSelf_Consistency start_{cnt[0][1]}")
-        sample_sc = ssc.SampleSelf_Consistency(q_output) 
+        sample_sc = ssc.SampleSelf_Consistency_re(q_output) 
         print(f"SampleSelf_Consistency end_{cnt[0][1]}")
         
         print(f"get_annotation_data start_{cnt[0][1]}")
