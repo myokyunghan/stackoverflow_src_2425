@@ -1,4 +1,6 @@
-from lib.annotation.import_files import *
+import config.config as conf
+import psycopg2
+import psycopg2.extras
 
 class DBConn:
     _instance = None

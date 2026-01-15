@@ -8,8 +8,9 @@ class Result_Prep:
         df = pd.DataFrame()
         if len(file_list)>0 : 
             for f in file_list:
-                tmp = pd.read_csv(f'{path}/{ver}/{f}', index_col =0)
-                df = pd.concat([df, tmp], axis =0)
+                if f'{path}/{ver}/{f}'.endswith('.csv'):
+                    tmp = pd.read_csv(f'{path}/{ver}/{f}', index_col =0)
+                    df = pd.concat([df, tmp], axis =0)
 
             df.sort_values(by = ['creationdate']).reset_index(drop=True)
             return df
