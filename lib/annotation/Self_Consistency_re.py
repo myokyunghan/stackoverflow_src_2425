@@ -3,7 +3,9 @@ from lib.annotation.VLLM import VLLM
 import logging
 # https://github.com/meta-llama/llama-recipes/blob/main/recipes/quickstart/Prompt_Engineering_with_Llama_3.ipynb
 class Self_Consistency_re:
+
     def __init__(self, llm_model, model_name, few_shot_n, test_n, q_src_yn, ver, p_ver, sc_num, temperature, excel_ver, i):  
+
         # init variables
         self.df             = pd.DataFrame()
         self.eval_prompt    = []
@@ -30,6 +32,7 @@ class Self_Consistency_re:
         self.save_dir = f'{conf.DATA_PATH}{conf.ANNO_RESULT}/{model_name}'
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)  
+
         self.save_file = f'sc_{llm_model}_result_{few_shot_n}_{self.test_n}_{q_src_yn}_{self.version}_{self.p_ver}_{self.sc_num}_{self.temperature}_{self.excel_ver}_{self.loop_i}'
         self.logger.info(f'save file to     : {self.save_dir}/{self.save_file}.csv')
         self.logger.info(f'save config to   : {self.save_dir}/{self.save_file}_llm_config.json')
@@ -54,8 +57,6 @@ class Self_Consistency_re:
             e_f_dict = self.select_fewshot_for_e(leftover_list, few_shot_n, test_n)
             self.write_prompt(e_f_dict, few_shot_n)
             leftover_list = self.calc_acc(llm_model, few_shot_n, q_src_yn, model_name)
-            
-
 
     def set_environment(self):
         os.environ["VLLM_USE_CUDA_GRAPH"] = "0"
@@ -124,6 +125,7 @@ class Self_Consistency_re:
             # else : 
             samples = np.random.choice(pool, size=few_shot_n, replace=False)
             fewshot_q_list.extend(samples.tolist())
+
 
         self.logger.info(f'>>>>>>>>>>>>>>>! Self_Consistency re set_fewshot_example {fewshot_q_list}')
         return fewshot_q_list
@@ -216,11 +218,9 @@ class Self_Consistency_re:
         self.logger.info(f'>>>>>>>>>>>>>>>calc_acc_for_v savefile! {self.save_dir}/{self.save_file}.csv')
         result_df.to_csv(f'{self.save_dir}/{self.save_file}.csv')
         file_io.save_json(conf.VLLM_CONF[llm_model], f'{self.save_dir}/{self.save_file}_llm_config.json')
-        
+        self.logger.info(f'>>>>>>>>>>>>>>>calc_acc_for_v end!')
         return chk_leftover(result_df)
 
-
-        
 
 
     def calc_acc_for_l(self, llm_model, few_shot_n, q_src_yn):           
@@ -283,9 +283,9 @@ class Self_Consistency_re:
         elif llm_model == 'vq' : # vLLM + qwen
             print("VLLM")
             self.vllm = VLLM(llm_model, model_name)
+
             leftover_list = self.calc_acc_for_v(llm_model, few_shot_n, q_src_yn)
             return leftover_list
-
 
 def test(llm_model, model_ver, few_shot_n, test_n, q_src_yn, ver, p_ver, sc_num, temperature, excel_ver):
     print(f"Test {llm_model}_{few_shot_n}_{test_n}_{q_src_yn}_{p_ver}_{sc_num} 시작")

@@ -35,8 +35,8 @@ from lib.annotation.import_files import *
 from vllm import LLM, SamplingParams
 
 class VLLM:
-    _instances = {}
 
+    _instances = {}
     def __new__(cls, llm_model, model_name):
         key = (llm_model, model_name)
 
