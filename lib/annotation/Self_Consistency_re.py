@@ -34,11 +34,11 @@ class Self_Consistency_re:
         self.logger.info(f'save file to     : {self.save_dir}/{self.save_file}.csv')
         self.logger.info(f'save config to   : {self.save_dir}/{self.save_file}_llm_config.json')
 
-        self.init_process(q_src_yn, test_n, few_shot_n, llm_model, model_name)
+        self.init_process(q_src_yn, test_n, few_shot_n, test_n, llm_model, model_name)
 
   
 
-    def init_process(self, q_src_yn, test_n, few_shot_n, llm_model, model_name):
+    def init_process(self, q_src_yn, test_n, few_shot_n, test_n, llm_model, model_name):
         # init the process
         self.set_environment()
         self.get_annotation_data(q_src_yn)
@@ -191,13 +191,11 @@ class Self_Consistency_re:
         tmp['o_result'] = tmp['result'].apply(lambda x : re.sub(r'[^012]', '', x))
         tmp = tmp[tmp['o_result'].isin(['1', '0', '2'])]
 
+        
+        gold_df = tmp[['id', 'gold']].drop_duplicates()
         chk_cnt = tmp.groupby(['id', 'o_result']).count().reset_index()[['id', 'o_result', 'question']]
         chk_cnt = chk_cnt.rename(columns = {'question': 'sc_cnt'})
-        leftover_list = list(set(chk_cnt.loc[chk_cnt['sc_cnt'] != self.sc_num, 'id']))
-        
-        leftover_list
-        self.logger.info(f'>>>>>>>>>>>>>>>chk_leftover leftover_list! {leftover_list}')
-
+        leftover_list = list(chk_cnt.loc[chk_cnt['sc_cnt'] != sc_num, 'id'])
         
         return leftover_list
 
@@ -219,7 +217,7 @@ class Self_Consistency_re:
         result_df.to_csv(f'{self.save_dir}/{self.save_file}.csv')
         file_io.save_json(conf.VLLM_CONF[llm_model], f'{self.save_dir}/{self.save_file}_llm_config.json')
         
-        return self.chk_leftover(result_df)
+        return chk_leftover(result_df)
 
 
         
@@ -327,9 +325,9 @@ if __name__ == "__main__":
     test ('vq',              # llm_model
         'models--cyankiwi--Qwen3-30B-A3B-Instruct-2507-AWQ-4bit',         # model_ver
         4,                # few_shot_n
-        1,                # test_n(# of question for test)
+        50,                # test_n(# of question for test)
         'Y',              # q_src_yn 
-        1,                # iteration num
+        10,                # iteration num
         'sys_prompt10',   # prompt ver
         5,                # self-consistency number
         0.01,             # temperature
